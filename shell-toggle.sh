@@ -8,8 +8,7 @@ NOCTALIA_BINDS=(
     'Mod+Shift+B { spawn "noctalia" "msg" "bar-toggle"; }'
 )
 
-if pgrep -x noctalia > /dev/null; then
-    # Currently on Noctalia -> switch to DMS
+switch_to_dms() {
     pkill -x noctalia
     sleep 1
     sed -i 's/^spawn-at-startup "noctalia"/\/\/ spawn-at-startup "noctalia"/' "$CONFIG"
@@ -23,8 +22,9 @@ if pgrep -x noctalia > /dev/null; then
     disown
     sleep 1
     notify-send "Switched to DMS"
-else
-    # Currently on DMS -> switch to Noctalia
+}
+
+switch_to_noctalia() {
     pkill -f "dms run"
     sleep 1
     sed -i 's/^\/\/ spawn-at-startup "noctalia"/spawn-at-startup "noctalia"/' "$CONFIG"
@@ -38,4 +38,19 @@ else
     disown
     sleep 1
     notify-send "Switched to Noctalia"
+}
+
+CURRENT="DMS"
+pgrep -x noctalia > /dev/null && CURRENT="Noctalia"
+
+CHOICE=$(printf "Noctalia\nDMS" | fzf --prompt="Switch shell (current: $CURRENT) > " --height=10 --border --reverse)
+
+if [ -z "$CHOICE" ]; then
+    exit 0
+fi
+
+if [ "$CHOICE" = "Noctalia" ] && [ "$CURRENT" != "Noctalia" ]; then
+    switch_to_noctalia
+elif [ "$CHOICE" = "DMS" ] && [ "$CURRENT" != "DMS" ]; then
+    switch_to_dms
 fi
