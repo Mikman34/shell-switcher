@@ -1,6 +1,6 @@
 Noctalia ↔ DMS Shell Toggle (Niri)
 
-A one-command way to switch between Noctalia and DankMaterialShell (DMS) on niri, without logging out or hand-editing config files.
+A one-command way to switch between Noctalia and DankMaterialShell (DMS) on niri, without logging out or hand-editing config files. Includes an fzf-based picker so you can see which shell is active and select the other one explicitly.
 
 The problem
 
@@ -13,18 +13,22 @@ DMS writes its own keybinds to ~/.config/niri/dms/binds.kdl, but that file only 
 DMS is normally started via dms.service (systemd), but that unit depends on graphical-session.target, which only activates if niri itself is launched as a systemd service. Since niri here is started outside of systemd (e.g. from a TTY/display manager), that target never activates and dms.service fails with a "dependency" error. Solution: skip systemd for DMS entirely and start/stop it as a plain background process, same as Noctalia.
 The fix: shell-toggle
 
-A bash script (~/.local/bin/shell-toggle) that, on each run:
+A bash script (~/.local/bin/shell-toggle) that:
 
 Detects which shell is currently running (pgrep -x noctalia).
-Kills the active one.
+Shows an fzf picker listing both shells, with the currently active one shown in the prompt.
+If you pick the shell that's already running, it does nothing. Otherwise it:
+Kills the active shell.
 Comments/uncomments the relevant lines in ~/.config/niri/config.kdl:
 The spawn-at-startup "noctalia" line, so the right shell autostarts on next login too.
 Noctalia's hardcoded keybind lines, freeing those keys for DMS.
 The include "dms/binds.kdl" line, so DMS's keybinds load only while DMS is active.
 Reloads niri's config live (niri msg action load-config-file) — no logout needed.
-Starts the other shell as a detached background process (setsid ... & disown).
+Starts the newly selected shell as a detached background process (setsid ... & disown).
 
-Setp:
+Requires fzf to be installed.
+
+Setup
 Save the script to ~/.local/bin/shell-toggle and make it executable: chmod +x ~/.local/bin/shell-toggle.
 Make sure dms.service is disabled so it doesn't fight with the script: systemctl --user disable dms.
 In ~/.config/niri/config.kdl, keep the include for DMS's keybinds present but commented out by default: //include "dms/binds.kdl" (the script toggles it).
@@ -34,11 +38,17 @@ Mod+Shift+S { spawn "shell-toggle"; }
 Then reload with niri msg action load-config-file.
 
 Usage
-shell-toggle in the terminal.
+shell-toggle
 
-Run it any time to flip between Noctalia and DMS. Whichever shell is active also gets its keybinds live in niri; the other shell's binds are commented out until you switch back.
+This opens an fzf picker showing "Noctalia" and "DMS", with the currently active one shown in the prompt text. Select the shell you want — picking the one already running does nothing; picking the other one switches. Press Esc to cancel without changes.
+
+Since fzf needs a terminal, if you bind this to a niri key, launch it inside a terminal rather than headless:
+
+Mod+Shift+S { spawn "kitty" "-e" "shell-toggle"; }
+
+Then reload with niri msg action load-config-file.
 
 Notes / gotchas
 If you're on fish shell, heredocs (<< 'EOF') aren't supported the same way as bash — drop into bash first when editing the script.
 DMS's power menu is bound via IPC: dms ipc call powermenu toggle. Bind it either by editing dms/binds.kdl directly, or through DMS's own in-app shortcut editor (Settings → Keyboard Shortcuts → +), which writes to the same file.
-Full DMS IPC reference: DankMaterialShell/docs/IPC.m
+Full DMS IPC reference: DankMaterialShell/docs/IPC.md
