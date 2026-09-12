@@ -28,6 +28,18 @@ Starts the newly selected shell as a detached background process (setsid ... & d
 
 Requires fzf to be installed.
 
+
+NixOS compatibility
+
+The script works unchanged on NixOS as long as config.kdl is a plain writable file (i.e. you're not managing it declaratively through home-manager). Two gotchas to watch for:
+
+Shebang: NixOS has no /bin/bash — everything lives under /nix/store and /run/current-system/sw/bin/. Use the portable shebang #!/usr/bin/env bash instead of #!/bin/bash, or the script fails to launch with "No such file or directory" / "not an executable command".
+Process detection: NixOS wraps binaries in /nix/store, which truncates the kernel-level process name (/proc/PID/comm, what pgrep -x matches against) to 15 characters — so noctalia becomes .noctalia-wrapp. This makes pgrep -x noctalia silently fail to detect a running Noctalia even though it's active. Use pgrep -f "noctalia" instead, which matches against the full command line and works identically on Arch and NixOS.
+
+If you do use home-manager and config.kdl is Nix-store-managed (read-only), the sed -i calls will fail outright — that setup needs a different approach (a mutable symlink file that config.kdl includes, toggled by the script instead of editing the store-managed file directly).
+
+Required packages: fzf, libnotify (notify-send), procps (pgrep/pkill) — install via environment.systemPackages or nix-env if not already present.
+
 Setup
 Save the script to ~/.local/bin/shell-toggle and make it executable: chmod +x ~/.local/bin/shell-toggle.
 Make sure dms.service is disabled so it doesn't fight with the script: systemctl --user disable dms.
