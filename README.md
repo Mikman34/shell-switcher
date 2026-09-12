@@ -1,7 +1,16 @@
 Noctalia ↔ DMS Shell Toggle (Niri)
 
+Shell: Bash Compositor: niri Works on: Arch Works on: NixOS
+
 A one-command way to switch between Noctalia and DankMaterialShell (DMS) on niri, without logging out or hand-editing config files. Includes an fzf-based picker so you can see which shell is active and select the other one explicitly.
 
+Contents
+The problem
+The fix: shell-toggle
+NixOS compatibility
+Setup
+Usage
+Notes / gotchas
 The problem
 
 Both Noctalia and DMS are full Quickshell-based shells for niri — bar, launcher, notifications, power menu, etc. Running both at once means duplicate bars, duplicate notification daemons, and keybind collisions, since niri's config is static and whichever shell's keybinds are active in config.kdl will "win" over the other, even if the other shell isn't running.
@@ -28,7 +37,8 @@ Starts the newly selected shell as a detached background process (setsid ... & d
 
 Requires fzf to be installed.
 
-
+<details> <summary><code>~/.local/bin/shell-toggle</code> (click to expand)</summary>
+</details>
 NixOS compatibility
 
 The script works unchanged on NixOS as long as config.kdl is a plain writable file (i.e. you're not managing it declaratively through home-manager). Two gotchas to watch for:
